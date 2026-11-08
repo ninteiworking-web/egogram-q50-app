@@ -250,4 +250,116 @@
         }
 
         function calculateResult() {
-            document.
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            const scores = { CP: 0, NP: 0, A: 0, FC: 0, AC: 0 };
+            questions.forEach((q, idx) => {
+                scores[q.type] += answers[idx];
+            });
+
+            document.getElementById('score-cp').textContent = scores.CP;
+            document.getElementById('score-np').textContent = scores.NP;
+            document.getElementById('score-a').textContent = scores.A;
+            document.getElementById('score-fc').textContent = scores.FC;
+            document.getElementById('score-ac').textContent = scores.AC;
+
+            // パターンの判定（ご提示いただいた画像のようなカード表示用）
+            determinePattern(scores);
+
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['CP (厳格)', 'NP (寛容)', 'A (論理)', 'FC (自由)', 'AC (協調)'],
+                    datasets: [{
+                        label: '自我状態スコア',
+                        data: [scores.CP, scores.NP, scores.A, scores.FC, scores.AC],
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(79, 70, 229, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: true },
+                            suggestedMin: 0,
+                            suggestedMax: 20,
+                            ticks: { stepSize: 5 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            generateAnalysis(scores);
+        }
+
+        function determinePattern(s) {
+            let title = "バランス標準タイプ";
+            let desc = "思いやりと冷静さのバランスが◎";
+
+            // 簡易的なパターンの判定ロジック
+            if (s.NP >= 14 && s.A >= 14 && s.CP <= 12 && s.AC <= 12) {
+                title = "への字型 円満バランス";
+                desc = "思いやりと冷静さのバランスが◎";
+            } else if (s.NP >= 14 && s.AC >= 14 && s.FC <= 10) {
+                title = "N型 献身タイプ";
+                desc = "人に尽くすが、がまんしやすい傾向";
+            } else if (s.CP >= 14 && s.FC >= 14 && s.AC <= 10) {
+                title = "逆N型 自己主張タイプ";
+                desc = "考えがはっきり、行動力がある";
+            } else if (s.CP >= 13 && s.NP >= 13 && s.FC >= 13 && s.A <= 11) {
+                title = "M型 明るい楽天タイプ";
+                desc = "明るいムードメーカー";
+            } else if (s.CP >= 14 && s.AC >= 14) {
+                title = "U字型 葛藤ストレスタイプ";
+                desc = "理想と周りの間で悩みや負担を抱えやすい";
+            } else {
+                title = "標準バランスタイプ";
+                desc = "柔軟で安定した心の状態です";
+            }
+
+            document.getElementById('pattern-title').textContent = title;
+            document.getElementById('pattern-desc').textContent = desc;
+        }
+
+        function generateAnalysis(s) {
+            const container = document.getElementById('analysis-details');
+            
+            function getLevel(val) {
+                if (val >= 15) return "高い傾向";
+                if (val <= 7) return "低い傾向";
+                return "標準的";
+            }
+
+            container.innerHTML = `
+                <div>
+                    <strong class="text-slate-800">CP（批判的親）：${s.CP}点 (${getLevel(s.CP)})</strong>
+                    <p class="text-slate-500 mt-0.5">責任感や正義感、理想主義の高さを表します。高い人は規律を重んじ、低い人は寛容で他人に寛大です。</p>
+                </div>
+                <div>
+                    <strong class="text-slate-800">NP（養育的親）：${s.NP}点 (${getLevel(s.NP)})</strong>
+                    <p class="text-slate-500 mt-0.5">優しさ、思いやり、母性を表します。高い人は面倒見が良く、低い人はサバサバとしていて自立心を重んじます。</p>
+                </div>
+                <div>
+                    <strong class="text-slate-800">A（成人）：${s.A}点 (${getLevel(s.A)})</strong>
+                    <p class="text-slate-500 mt-0.5">客観的、論理的、現実的な思考力を表します。高い人は冷静な判断が得意で、低い人は直感的・感情的に動きやすい傾向があります。</p>
+                </div>
+                <div>
+                    <strong class="text-slate-800">FC（自由な子ども）：${s.FC}点 (${getLevel(s.FC)})</strong>
+                    <p class="text-slate-500 mt-0.5">明るさ、好奇心、奔放さを表します。高い人はエネルギッシュでユーモアがあり、低い人はおとなしく控えめです。</p>
+                </div>
+                <div>
+                    <strong class="text-slate-800">AC（順応した子ども）：${s.AC}点 (${getLevel(s.AC)})</strong>
+                    <p class="text-slate-500 mt-0.5">協調性、従順さ、遠慮深さを表します。高い人は空気を読むのが得意な一方で我慢しやすく、低い人はマイペースで自己主張が強いです。</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
