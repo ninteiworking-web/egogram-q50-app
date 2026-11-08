@@ -215,4 +215,124 @@
         }
 
         function showQuestion() {
-            const
+            const q = questions[currentIdx];
+            document.getElementById('progress-text').textContent = `質問 ${currentIdx + 1} / 50`;
+            document.getElementById('category-badge').textContent = categoryNames[q.type];
+            document.getElementById('question-text').textContent = q.text;
+            
+            // 進捗バー
+            const progress = ((currentIdx) / 50) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            // 戻るボタンの表示制御
+            if (currentIdx > 0) {
+                document.getElementById('prev-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('prev-btn').classList.add('hidden');
+            }
+        }
+
+        function answer(score) {
+            answers[currentIdx] = score;
+            currentIdx++;
+
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                calculateResult();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIdx > 0) {
+                currentIdx--;
+                showQuestion();
+            }
+        }
+
+        function calculateResult() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            // スコア集計（各カテゴリ10問×最大2点 = 最大20点）
+            const scores = { CP: 0, NP: 0, A: 0, FC: 0, AC: 0 };
+            questions.forEach((q, idx) => {
+                scores[q.type] += answers[idx];
+            });
+
+            // スコア表示
+            document.getElementById('score-cp').textContent = scores.CP;
+            document.getElementById('score-np').textContent = scores.NP;
+            document.getElementById('score-a').textContent = scores.A;
+            document.getElementById('score-fc').textContent = scores.FC;
+            document.getElementById('score-ac').textContent = scores.AC;
+
+            // レーダーチャート描画
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['CP (厳格)', 'NP (寛容)', 'A (論理)', 'FC (自由)', 'AC (協調)'],
+                    datasets: [{
+                        label: '自我状態スコア',
+                        data: [scores.CP, scores.NP, scores.A, scores.FC, scores.AC],
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(79, 70, 229, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: true },
+                            suggestedMin: 0,
+                            suggestedMax: 20,
+                            ticks: { stepSize: 5 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 解説文の生成
+            generateAnalysis(scores);
+        }
+
+        function generateAnalysis(s) {
+            const container = document.getElementById('analysis-details');
+            
+            function getLevel(val) {
+                if (val >= 15) return "高い傾向";
+                if (val <= 7) return "低い傾向";
+                return "標準적";
+            }
+
+            container.innerHTML = `
+                <div>
+                    <strong class="text-slate-800">CP（批判的親）：${s.CP}点</strong>
+                    <p class="text-slate-500 mt-0.5">責任感や正義感、理想主義の高さを表します。高い人は規律を重んじ、低い人は寛容で他人に寛大です。</p>
+                </div>
+                <div>
+                    <strong class="text-slate-800">NP（養育的親）：${s.NP}点</strong>
+                    <p class="text-slate-500 mt-0.5">優しさ、思いやり、母性を表します。高い人は面倒見が良く、低い人はサバサバとしていて自立心を重んじます。</p>
+                </div>
+                <div>
+                    <strong class="text-slate-800">A（成人）：${s.A}点</strong>
+                    <p class="text-slate-500 mt-0.5">客観的、論理的、現実的な思考力を表します。高い人は冷静な判断が得意で、低い人は直感的・感情的に動きやすい傾向があります。</p>
+                </div>
+                <div>
+                    <strong class="text-slate-800">FC（自由な子ども）：${s.FC}点</strong>
+                    <p class="text-slate-500 mt-0.5">明るさ、好奇心、奔放さを表します。高い人はエネルギッシュでユーモアがあり、低い人はおとなしく控えめです。</p>
+                </div>
+                <div>
+                    <strong class="text-slate-800">AC（順応した子ども）：${s.AC}点</strong>
+                    <p class="text-slate-500 mt-0.5">協調性、従順さ、遠慮深さを表します。高い人は空気を読むのが得意な一方で我慢しやすく、低い人はマイペースで自己主張が強いです。</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
